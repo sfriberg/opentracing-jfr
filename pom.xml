@@ -81,6 +81,11 @@
 				<version>${version.io.opentracing-api-extensions}</version>
 			</dependency>
 			<dependency>
+				<groupId>io.opentracing.contrib</groupId>
+				<artifactId>opentracing-concurrent</artifactId>
+				<version>0.2.0</version>
+			</dependency>
+			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
 				<version>2.23.0</version>
