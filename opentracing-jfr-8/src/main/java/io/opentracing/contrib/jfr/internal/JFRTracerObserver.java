@@ -15,12 +15,14 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 
+import static java.util.Objects.isNull;
+
 @SuppressWarnings("deprecation")
 public class JFRTracerObserver implements TracerObserver {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenTracingJFR.class);
 
-	private static boolean initialized;
+	private static volatile Producer producer;
 
 	public JFRTracerObserver() {
 	}
@@ -28,14 +30,14 @@ public class JFRTracerObserver implements TracerObserver {
 	@Override
 	public SpanObserver onStart(SpanData sd) {
 		if (FlightRecorder.isActive()) {
-			if (!initialized) {
+			if (isNull(producer)) {
 				synchronized (JFRTracerObserver.class) {
-					if (!initialized) {
+					if (isNull(producer)) {
 						try {
 							Producer p = new Producer("OpenTracing", "OpenTracing JFR Events", "http://opentracing.io/");
 							p.addEvent(JFRSpanObserver.class);
 							p.register();
-							initialized = true;
+							producer = p;
 						} catch (URISyntaxException | InvalidValueException | InvalidEventDefinitionException ex) {
 							LOG.error("Unable to register JFR producer.", ex);
 						}
@@ -46,7 +48,7 @@ public class JFRTracerObserver implements TracerObserver {
 			// Some recording is running
 			SpanContext context = ((Span) sd).context();
 			JFRSpanObserver event = new JFRSpanObserver(context.toTraceId(), context.toSpanId(), sd.getOperationName());
-			event.begin();
+			event.start();
 			return event;
 		}
 

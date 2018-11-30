@@ -25,6 +25,14 @@ public class JFRSpanObserver extends jdk.jfr.Event implements SpanObserver {
 	@Description("Operation name of the span")
 	private String name;
 
+	@Label("Start Thread")
+	@Description("Thread starting the span")
+	private final Thread startThread;
+
+	@Label("Finish Thread")
+	@Description("Thread finishing the span")
+	private Thread finishThread;
+
 	/**
 	 * Create a new Span Event
 	 *
@@ -36,10 +44,31 @@ public class JFRSpanObserver extends jdk.jfr.Event implements SpanObserver {
 		this.traceId = traceId;
 		this.spanId = spanId;
 		this.name = name;
+		this.startThread = Thread.currentThread();
+	}
+
+	public String getTraceId() {
+		return traceId;
+	}
+
+	public String getSpanId() {
+		return spanId;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public Thread getStartThread() {
+		return startThread;
+	}
+
+	public Thread getFinishThread() {
+		return finishThread;
 	}
 
 	@Override
@@ -65,6 +94,7 @@ public class JFRSpanObserver extends jdk.jfr.Event implements SpanObserver {
 
 	@Override
 	public void onFinish(SpanData sd, long l) {
+		this.finishThread = Thread.currentThread();
 		end();
 		commit();
 	}
