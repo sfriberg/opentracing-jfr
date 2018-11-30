@@ -5,14 +5,19 @@ import io.opentracing.contrib.jfr.internal.JFRSpanObserver;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OpenTracingJFRTest {
 
@@ -44,12 +49,16 @@ public class OpenTracingJFRTest {
 			// Validate span was created and recorded in JFR
 			assertEquals(1, mockTracer.finishedSpans().size());
 
-			MockSpan span = mockTracer.finishedSpans().get(0);
+			Map<String, MockSpan> finishedSpans = mockTracer.finishedSpans().stream().collect(Collectors.toMap(e -> e.operationName(), e -> e));
+			List<RecordedEvent> readAllEvents = RecordingFile.readAllEvents(output);
+			assertEquals(finishedSpans.size(), readAllEvents.size());
 			RecordingFile.readAllEvents(output).stream()
 					.forEach(e -> {
-						assertEquals(span.context().toTraceId(), e.getString("traceId"));
-						assertEquals(span.context().toSpanId(), e.getString("spanId"));
-						assertEquals(span.operationName(), e.getString("name"));
+						MockSpan finishedSpan = finishedSpans.get(e.getString("name"));
+						assertNotNull(finishedSpan);
+						assertEquals(finishedSpan.context().toTraceId(), e.getString("traceId"));
+						assertEquals(finishedSpan.context().toSpanId(), e.getString("spanId"));
+						assertEquals(finishedSpan.operationName(), e.getString("name"));
 					});
 
 		} finally {
