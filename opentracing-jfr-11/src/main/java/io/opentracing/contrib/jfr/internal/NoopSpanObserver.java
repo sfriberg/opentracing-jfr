@@ -9,7 +9,7 @@ final class NoopSpanObserver implements SpanObserver {
 
 	static final SpanObserver INSTANCE = new NoopSpanObserver();
 
-	private NoopSpanObserver() {
+	NoopSpanObserver() {
 	}
 
 	@Override

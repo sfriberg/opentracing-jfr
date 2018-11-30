@@ -3,15 +3,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.opentracing-contrib</groupId>
-	<artifactId>opentracing-jfr</artifactId>
+	<artifactId>opentracing-jfr-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+	<packaging>pom</packaging>
+	<name>OpenTracing JFR</name>
 
 	<organization>
 		<name>OpenTracing</name>
 		<url>http://opentracing.io/</url>
 	</organization>
 	<inceptionYear>2018</inceptionYear>
+
 	<developers>
 		<developer>
 			<id>sfriberg</id>
@@ -22,13 +24,18 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>11</maven.compiler.release>
 
 		<version.io.opentracing>0.32.0-RC1</version.io.opentracing>
 		<version.io.opentracing-api-extensions>0.2.0</version.io.opentracing-api-extensions> 
 		<version.junit>5.3.1</version.junit>
 		<version.slf4j>1.7.25</version.slf4j>
 	</properties>
+
+	<modules>
+		<module>opentracing-jfr-8</module>
+		<module>opentracing-jfr-11</module>
+		<module>opentracing-jfr</module>
+	</modules>
 
 	<build>
 		<plugins>
@@ -101,52 +108,4 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-	<dependencies>
-		<dependency>
-			<groupId>io.opentracing</groupId>
-			<artifactId>opentracing-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.opentracing</groupId>
-			<artifactId>opentracing-util</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.opentracing</groupId>
-			<artifactId>opentracing-mock</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.opentracing.contrib</groupId>
-			<artifactId>opentracing-api-extensions</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.opentracing.contrib</groupId>
-			<artifactId>opentracing-api-extensions-tracer</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-engine</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 </project>

@@ -1,3 +1,5 @@
 target/
 nbproject/
 nb-configuration.xml
+nbactions.xml
+.attach_pid*
