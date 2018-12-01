@@ -3,7 +3,7 @@ package io.opentracing.contrib.jfr;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.concurrent.TracedExecutorService;
-import io.opentracing.contrib.jfr.internal.JFRSpanObserver;
+import io.opentracing.contrib.jfr.internal.JFRSpan;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import jdk.jfr.Recording;
@@ -34,11 +34,11 @@ public class DifferentSpanTest {
 		try {
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 
 			// Start JFR
 			Recording recording = new Recording();
-			recording.enable(JFRSpanObserver.class);
+			recording.enable(JFRSpan.class);
 			recording.start();
 
 			// Generate spans
@@ -63,8 +63,8 @@ public class DifferentSpanTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getString("name"));
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getString("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getString("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getString("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getString("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getString("name"));
 					});
 
@@ -79,11 +79,11 @@ public class DifferentSpanTest {
 		try {
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 
 			// Start JFR
 			Recording recording = new Recording();
-			recording.enable(JFRSpanObserver.class);
+			recording.enable(JFRSpan.class);
 			recording.start();
 
 			// Generate spans
@@ -107,8 +107,8 @@ public class DifferentSpanTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getString("name"));
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getString("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getString("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getString("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getString("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getString("name"));
 						assertNotEquals(Thread.currentThread().getName(), e.getThread().getJavaName());
 					});

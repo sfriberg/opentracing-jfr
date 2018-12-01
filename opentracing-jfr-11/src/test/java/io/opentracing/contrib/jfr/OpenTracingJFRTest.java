@@ -1,7 +1,7 @@
 package io.opentracing.contrib.jfr;
 
 import io.opentracing.Tracer;
-import io.opentracing.contrib.jfr.internal.JFRSpanObserver;
+import io.opentracing.contrib.jfr.internal.JFRSpan;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import jdk.jfr.Recording;
@@ -32,15 +32,15 @@ public class OpenTracingJFRTest {
 		try {
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 
 			// Start JFR
 			Recording recording = new Recording();
-			recording.enable(JFRSpanObserver.class);
+			recording.enable(JFRSpan.class);
 			recording.start();
 
 			// Generate span
-			tracer.buildSpan("test span").start().finish();
+ 			tracer.buildSpan("test span").start().finish();
 
 			// Stop recording
 			recording.stop();
@@ -56,8 +56,8 @@ public class OpenTracingJFRTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getString("name"));
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getString("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getString("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getString("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getString("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getString("name"));
 					});
 
