@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class OpenTracingJFRTest {
+public class JFRTracerTest {
 
 	/**
 	 * Test JFR gets the generated span
@@ -27,7 +27,7 @@ public class OpenTracingJFRTest {
 	 * @throws java.io.IOException on error
 	 */
 	@Test
-	public void testDecorate() throws IOException {
+	public void basicEvent() throws IOException {
 		Path output = Files.createTempFile("test-recording", ".jfr");
 		try {
 			// Setup tracers
