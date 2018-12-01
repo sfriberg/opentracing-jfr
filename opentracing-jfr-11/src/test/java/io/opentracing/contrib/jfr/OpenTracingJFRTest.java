@@ -50,9 +50,9 @@ public class OpenTracingJFRTest {
 			assertEquals(1, mockTracer.finishedSpans().size());
 
 			Map<String, MockSpan> finishedSpans = mockTracer.finishedSpans().stream().collect(Collectors.toMap(e -> e.operationName(), e -> e));
-			List<RecordedEvent> readAllEvents = RecordingFile.readAllEvents(output);
-			assertEquals(finishedSpans.size(), readAllEvents.size());
-			RecordingFile.readAllEvents(output).stream()
+			List<RecordedEvent> events = RecordingFile.readAllEvents(output);
+			assertEquals(finishedSpans.size(), events.size());
+			events.stream()
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getString("name"));
 						assertNotNull(finishedSpan);
