@@ -103,7 +103,7 @@ public class JFRScope extends jdk.jfr.Event implements Scope, TextMap {
 				String[] values = value.split(":");
 				this.traceId = values[0];
 				this.spanId = values[1];
-				this.parentSpanId = values[2];
+				this.parentSpanId = values[2].equals("0") ? null : values[2];
 				break;
 			default:
 				LOG.warn("Unsupported injection key: " + key);
