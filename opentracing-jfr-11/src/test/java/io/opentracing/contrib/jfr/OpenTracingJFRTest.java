@@ -40,7 +40,7 @@ public class OpenTracingJFRTest {
 			recording.start();
 
 			// Generate span
- 			tracer.buildSpan("test span").start().finish();
+			tracer.buildSpan("test span").start().finish();
 
 			// Stop recording
 			recording.stop();

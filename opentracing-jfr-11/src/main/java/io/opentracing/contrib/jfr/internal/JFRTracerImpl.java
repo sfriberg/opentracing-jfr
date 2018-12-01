@@ -18,7 +18,7 @@ public class JFRTracerImpl implements Tracer {
 
 	public JFRTracerImpl(Tracer tracer) {
 		this.tracer = tracer;
-		this.scopeManager = new JFRScopeManager(tracer.scopeManager());
+		this.scopeManager = new JFRScopeManager(tracer);
 	}
 
 	@Override
@@ -45,67 +45,6 @@ public class JFRTracerImpl implements Tracer {
 	@Override
 	public <C> SpanContext extract(Format<C> format, C carrier) {
 		return tracer.extract(format, carrier);
-	}
-
-	private class JFRScopeManager implements ScopeManager {
-
-		final ThreadLocal<JFRScope> activeScope = new ThreadLocal<>();
-
-		private final ScopeManager scopeManager;
-
-		JFRScopeManager(ScopeManager scopeManager) {
-			this.scopeManager = scopeManager;
-		}
-
-		@Override
-		public Scope activate(Span span, boolean finishSpanOnClose) {
-			JFRScope scope;
-			if (span instanceof JFRSpan) {
-				scope = new JFRScope(this, scopeManager.activate(((JFRSpan) span).unwrap(), finishSpanOnClose), (JFRSpan) span, finishSpanOnClose);
-			} else {
-				JFRSpan jfrSpan = new JFRSpan(tracer, span, "unknown");
-				jfrSpan.begin();
-				scope = new JFRScope(this, scopeManager.activate(span, finishSpanOnClose), jfrSpan, finishSpanOnClose);
-			}
-			activeScope.set(scope);
-			return scope;
-		}
-
-		@Override
-		public Scope active() {
-			return activeScope.get();
-		}
-	}
-
-	private class JFRScope implements Scope {
-
-		private final Scope scope;
-		private final JFRSpan jfrSpan;
-		private final boolean finishSpanOnClose;
-		private final JFRScope parent;
-		private final JFRScopeManager manager;
-
-		JFRScope(JFRScopeManager manager, Scope scope, JFRSpan span, boolean finishSpanOnClose) {
-			this.scope = scope;
-			this.jfrSpan = span;
-			this.finishSpanOnClose = finishSpanOnClose;
-			this.parent = manager.activeScope.get();
-			this.manager = manager;
-		}
-
-		@Override
-		public void close() {
-			scope.close();
-			manager.activeScope.set(parent);
-			if (finishSpanOnClose) {
-				jfrSpan.finishJFR();
-			}
-		}
-
-		@Override
-		public Span span() {
-			return jfrSpan;
-		}
 	}
 
 	private class JFRSpanBuilder implements SpanBuilder {

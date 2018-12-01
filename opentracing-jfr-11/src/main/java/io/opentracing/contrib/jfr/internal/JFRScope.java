@@ -1,9 +1,10 @@
 package io.opentracing.contrib.jfr.internal;
 
+import io.opentracing.Scope;
 import io.opentracing.Span;
-import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.jfr.JFRTracer;
+import io.opentracing.contrib.jfr.internal.JFRScopeManager;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
 import jdk.jfr.Category;
@@ -14,17 +15,21 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 
 @Category("OpenTracing")
 @Label("OpenTracing JFR Event")
 @Description("Open Tracing spans exposed as a JFR event")
-public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
+public class JFRScope extends jdk.jfr.Event implements Scope, TextMap {
 
 	private final static Logger LOG = LoggerFactory.getLogger(JFRTracer.class);
+
 	private final Tracer tracer;
-	private final Span span;
+	private final JFRScopeManager manager;
+	private final Scope scope;
+	private final JFRSpan jfrSpan;
+	private final boolean finishSpanOnClose;
+	private final JFRScope parent;
 
 	@Label("Trace ID")
 	@Description("Trace ID that will be the same for all spans that are part of the same trace")
@@ -42,22 +47,13 @@ public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 	@Description("Operation name of the span")
 	private String name;
 
-	@Label("Start Thread")
-	@Description("Thread starting the span")
-	private final Thread startThread;
-
-	@Label("Finish Thread")
-	@Description("Thread finishing the span")
-	private Thread finishThread;
-
-	/**
-	 * Create a new Span Event
-	 */
-	public JFRSpan(Tracer tracer, Span span, String name) {
-		this.name = name;
-		this.startThread = Thread.currentThread();
+	public JFRScope(Tracer tracer, JFRScopeManager manager, Scope scope, JFRSpan jfrSpan, boolean finishSpanOnClose) {
 		this.tracer = tracer;
-		this.span = span;
+		this.scope = scope;
+		this.jfrSpan = jfrSpan;
+		this.finishSpanOnClose = finishSpanOnClose;
+		this.parent = manager.activeScope.get();
+		this.manager = manager;
 	}
 
 	public String getTraceId() {
@@ -74,18 +70,6 @@ public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 
 	public String getName() {
 		return name;
-	}
-
-	public Thread getStartThread() {
-		return startThread;
-	}
-
-	public Thread getFinishThread() {
-		return finishThread;
-	}
-
-	public Span unwrap() {
-		return span;
 	}
 
 	@Override
@@ -127,77 +111,24 @@ public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 	}
 
 	@Override
-	public SpanContext context() {
-		return span.context();
-	}
-
-	@Override
-	public Span setTag(String key, String value) {
-		return span.setTag(key, value);
-	}
-
-	@Override
-	public Span setTag(String key, boolean value) {
-		return span.setTag(key, value);
-	}
-
-	@Override
-	public Span setTag(String key, Number value) {
-		return span.setTag(key, value);
-	}
-
-	@Override
-	public Span log(Map<String, ?> fields) {
-		return span.log(fields);
-	}
-
-	@Override
-	public Span log(long timestampMicroseconds, Map<String, ?> fields) {
-		return span.log(timestampMicroseconds, fields);
-	}
-
-	@Override
-	public Span log(String event) {
-		return span.log(event);
-	}
-
-	@Override
-	public Span log(long timestampMicroseconds, String event) {
-		return span.log(timestampMicroseconds, event);
-	}
-
-	@Override
-	public Span setBaggageItem(String key, String value) {
-		return span.setBaggageItem(key, value);
-	}
-
-	@Override
-	public String getBaggageItem(String key) {
-		return span.getBaggageItem(key);
-	}
-
-	@Override
-	public Span setOperationName(String operationName) {
-		this.name = operationName;
-		return span.setOperationName(operationName);
-	}
-
-	@Override
-	public void finish() {
+	public void close() {
+		scope.close();
 		finishJFR();
-		span.finish();
+		manager.activeScope.set(parent);
+		if (finishSpanOnClose) {
+			jfrSpan.finishJFR();
+		}
 	}
 
 	@Override
-	public void finish(long finishMicros) {
-		finishJFR();
-		span.finish();
+	public Span span() {
+		return jfrSpan;
 	}
 
-	void finishJFR() {
+	private void finishJFR() {
 		if (shouldCommit()) {
-			tracer.inject(span.context(), Format.Builtin.TEXT_MAP, this);
-			this.finishThread = Thread.currentThread();
+			this.name = jfrSpan.getName();
+			tracer.inject(jfrSpan.context(), Format.Builtin.TEXT_MAP, this);
 			end();
 			commit();
 		}

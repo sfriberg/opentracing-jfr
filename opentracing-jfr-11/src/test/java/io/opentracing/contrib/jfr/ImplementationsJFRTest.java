@@ -90,7 +90,7 @@ public class ImplementationsJFRTest {
 			recording.start();
 
 			// Generate span
-			Span start = tracer.buildSpan("test span").start();
+			Span start = tracer.buildSpan("outer span").start();
 			tracer.scopeManager().activate(start, false);
 			tracer.buildSpan("inner span").startActive(true).close();
 			tracer.scopeManager().active().close();
@@ -102,7 +102,7 @@ public class ImplementationsJFRTest {
 
 			// Validate span was created and recorded in JFR
 			List<RecordedEvent> events = RecordingFile.readAllEvents(output);
-			assertEquals(2, events.size());
+			assertEquals(4, events.size());
 			events.stream()
 					.forEach(e -> {
 						assertNotNull(e.getString("name"));
