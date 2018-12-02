@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@SuppressWarnings("deprecation")
 public class DifferentSpanTest {
 
 	@Test
@@ -36,7 +37,7 @@ public class DifferentSpanTest {
 		try {
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 
 			// Start JFR
 			startJFR(jfrConfig);
@@ -63,8 +64,8 @@ public class DifferentSpanTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getValue("name").toString());
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getValue("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getValue("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getValue("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getValue("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getValue("name"));
 					});
 
@@ -81,19 +82,20 @@ public class DifferentSpanTest {
 		try {
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 
 			// Start JFR
 			startJFR(jfrConfig);
 
 			// Generate spans
-			Span span = tracer.buildSpan("test span").start();
 			TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
+			Span span = tracer.buildSpan("test span").start();
 			executor.submit(() -> {
 				span.finish();
 			}).get(5, TimeUnit.SECONDS);
 
 			// Stop recording
+			Thread.sleep(100);
 			List<FLREvent> events = stopJfr(output);
 
 			// Validate span was created and recorded in JFR
@@ -105,8 +107,8 @@ public class DifferentSpanTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getValue("name").toString());
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getValue("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getValue("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getValue("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getValue("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getValue("name"));
 						assertNotEquals(Thread.currentThread().getName(), e.getThread());
 					});

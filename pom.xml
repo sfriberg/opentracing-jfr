@@ -72,16 +72,6 @@
 			</dependency>
 			<dependency>
 				<groupId>io.opentracing.contrib</groupId>
-				<artifactId>opentracing-api-extensions</artifactId>
-				<version>${version.io.opentracing-api-extensions}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.opentracing.contrib</groupId>
-				<artifactId>opentracing-api-extensions-tracer</artifactId>
-				<version>${version.io.opentracing-api-extensions}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.opentracing.contrib</groupId>
 				<artifactId>opentracing-concurrent</artifactId>
 				<version>0.2.0</version>
 			</dependency>

@@ -36,7 +36,7 @@ public class OpenTracingJFRTest {
 
 			// Setup tracers
 			MockTracer mockTracer = new MockTracer();
-			Tracer tracer = OpenTracingJFR.decorate(mockTracer);
+			Tracer tracer = JFRTracer.wrap(mockTracer);
 			// Start JFR
 			startJFR(jfrConfig);
 
@@ -55,8 +55,8 @@ public class OpenTracingJFRTest {
 					.forEach(e -> {
 						MockSpan finishedSpan = finishedSpans.get(e.getValue("name").toString());
 						assertNotNull(finishedSpan);
-						assertEquals(finishedSpan.context().toTraceId(), e.getValue("traceId"));
-						assertEquals(finishedSpan.context().toSpanId(), e.getValue("spanId"));
+						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getValue("traceId"));
+						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getValue("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getValue("name"));
 					});
 
