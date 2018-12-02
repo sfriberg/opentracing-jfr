@@ -191,10 +191,10 @@ public class JFRSpan extends TimedEvent implements Span, TextMap {
 	}
 
 	void finishJFR() {
+		this.finishThread = Thread.currentThread();
 		EXECUTOR.execute(() -> {
 			if (shouldWrite()) {
 				tracer.inject(span.context(), Format.Builtin.TEXT_MAP, this);
-				this.finishThread = Thread.currentThread();
 				this.end();
 				this.commit();
 			}

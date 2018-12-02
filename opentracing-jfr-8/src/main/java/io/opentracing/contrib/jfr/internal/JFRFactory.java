@@ -14,7 +14,6 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +28,7 @@ public final class JFRFactory {
 			new ThreadFactory() {
 		@Override
 		public Thread newThread(Runnable r) {
-			Thread thread = new Thread(r, "JFRTracer Span Events" + ThreadLocalRandom.current().nextInt());
+			Thread thread = new Thread(r, "JFRTracer Span Events");
 			thread.setDaemon(true);
 			return thread;
 		}

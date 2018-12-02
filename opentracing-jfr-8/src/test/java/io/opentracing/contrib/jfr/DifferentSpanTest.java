@@ -89,9 +89,11 @@ public class DifferentSpanTest {
 
 			// Generate spans
 			TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
+			long expectedStartThread = Thread.currentThread().getId();
 			Span span = tracer.buildSpan("test span").start();
-			executor.submit(() -> {
+			long expectedFinishThread = executor.submit(() -> {
 				span.finish();
+				return Thread.currentThread().getId();
 			}).get(5, TimeUnit.SECONDS);
 
 			// Stop recording
@@ -110,7 +112,10 @@ public class DifferentSpanTest {
 						assertEquals(Long.toString(finishedSpan.context().traceId()), e.getValue("traceId"));
 						assertEquals(Long.toString(finishedSpan.context().spanId()), e.getValue("spanId"));
 						assertEquals(finishedSpan.operationName(), e.getValue("name"));
-						assertNotEquals(Thread.currentThread().getName(), e.getThread());
+						assertNotEquals(expectedStartThread, e.getThread());
+						assertNotEquals(expectedFinishThread, e.getThread());
+						assertEquals(expectedStartThread, e.getValue("startThread"));
+						assertEquals(expectedFinishThread, e.getValue("finishThread"));
 					});
 
 		} finally {
