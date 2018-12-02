@@ -31,7 +31,7 @@ public final class JFRTestUtils {
 
 	public static Path getJfrConfig() throws IOException {
 		Path jfrConfig = Files.createTempFile("opentracing", ".jfc");
-		Files.copy(OpenTracingJFRTest.class.getResourceAsStream("opentracing.jfc"), jfrConfig, StandardCopyOption.REPLACE_EXISTING);
+		Files.copy(JFRTestUtils.class.getResourceAsStream("opentracing.jfc"), jfrConfig, StandardCopyOption.REPLACE_EXISTING);
 		return jfrConfig;
 	}
 

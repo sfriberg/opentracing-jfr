@@ -65,4 +65,17 @@ public class JFRTracerTest {
 			Files.delete(output);
 		}
 	}
+
+	@Test
+	public void noJFR() throws IOException {
+		// Setup tracers
+		MockTracer mockTracer = new MockTracer();
+		Tracer tracer = JFRTracer.wrap(mockTracer);
+
+		// Generate span
+		tracer.buildSpan("test span").start().finish();
+
+		// Validate span was created and recorded in JFR
+		assertEquals(1, mockTracer.finishedSpans().size());
+	}
 }

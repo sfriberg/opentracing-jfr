@@ -19,7 +19,7 @@ import static io.opentracing.contrib.jfr.JFRTestUtils.stopJfr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class OpenTracingJFRTest {
+public class JFRTracerTest {
 
 	/**
 	 * Test JFR gets the generated span
@@ -28,7 +28,7 @@ public class OpenTracingJFRTest {
 	 */
 	@Test
 	@SuppressWarnings("deprecation")
-	public void testDecorate() throws IOException {
+	public void basicEvent() throws IOException {
 		Path jfrConfig = getJfrConfig();
 		Path output = Files.createTempFile("opentracing", ".jfr");
 
@@ -64,5 +64,18 @@ public class OpenTracingJFRTest {
 			Files.delete(jfrConfig);
 			Files.delete(output);
 		}
+	}
+
+	@Test
+	public void noJFR() throws IOException {
+		// Setup tracers
+		MockTracer mockTracer = new MockTracer();
+		Tracer tracer = JFRTracer.wrap(mockTracer);
+
+		// Generate span
+		tracer.buildSpan("test span").start().finish();
+
+		// Validate span was created and recorded in JFR
+		assertEquals(1, mockTracer.finishedSpans().size());
 	}
 }
