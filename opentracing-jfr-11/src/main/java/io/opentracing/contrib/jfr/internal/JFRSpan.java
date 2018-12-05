@@ -3,7 +3,6 @@ package io.opentracing.contrib.jfr.internal;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-import io.opentracing.contrib.jfr.JFRTracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
 import jdk.jfr.Category;
