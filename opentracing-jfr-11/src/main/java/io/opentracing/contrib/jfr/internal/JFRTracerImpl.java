@@ -6,15 +6,13 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import jdk.jfr.FlightRecorder;
 
-import static java.util.Objects.isNull;
+import static io.opentracing.contrib.jfr.internal.JFRSpan.createJFRSpan;
 
 public class JFRTracerImpl implements Tracer {
 
 	private final Tracer tracer;
 	private final JFRScopeManager scopeManager;
-	private FlightRecorder jfr;
 
 	public JFRTracerImpl(Tracer tracer) {
 		this.tracer = tracer;
@@ -106,30 +104,13 @@ public class JFRTracerImpl implements Tracer {
 		@Deprecated
 		public Span startManual() {
 			Span span = spanBuilder.startManual();
-			return startJFR(span);
+			return createJFRSpan(tracer, span, operationName);
 		}
 
 		@Override
 		public Span start() {
 			Span span = spanBuilder.start();
-			return startJFR(span);
-		}
-
-		private Span startJFR(Span span) {
-			if (FlightRecorder.isAvailable() && FlightRecorder.isInitialized()) {
-
-				// Avoid synchronization
-				if (isNull(jfr)) {
-					jfr = FlightRecorder.getFlightRecorder();
-				}
-
-				if (!jfr.getRecordings().isEmpty()) {
-					var event = new JFRSpan(tracer, span, operationName);
-					event.begin();
-					return event;
-				}
-			}
-			return span;
+			return createJFRSpan(tracer, span, operationName);
 		}
 	}
 }

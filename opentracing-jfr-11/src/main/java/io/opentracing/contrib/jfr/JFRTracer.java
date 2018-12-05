@@ -15,14 +15,27 @@ public final class JFRTracer {
 	}
 
 	public static Tracer wrap(Tracer tracer) {
-		try {
-			if (nonNull(Class.forName("jdk.jfr.FlightRecorder", false, JFRTracer.class.getClassLoader()))) {
-				return new JFRTracerImpl(tracer);
-			}
-		} catch (ClassNotFoundException ex) {
-			LOG.error("Unabled to find FlightRecorder when wrapping tracer", ex);
+		if (isFlightRecorderAvailable()) {
+			return new JFRTracerImpl(tracer);
 		}
-
+		LOG.warn("Unabled to find FlightRecorder unable wrapping tracer", new Throwable());
 		return tracer;
+	}
+
+	private static boolean isFlightRecorderAvailable() {
+		String[] klasses = {
+			"jdk.jfr.FlightRecorder",
+			"com.oracle.jrockit.jfr.FlightRecorder"
+		};
+
+		for (String klass : klasses) {
+			try {
+				if (nonNull(Class.forName(klass, false, JFRTracer.class.getClassLoader()))) {
+					return true;
+				}
+			} catch (ClassNotFoundException ex) {
+			}
+		}
+		return false;
 	}
 }

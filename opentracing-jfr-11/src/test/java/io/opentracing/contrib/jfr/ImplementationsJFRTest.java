@@ -84,21 +84,19 @@ public class ImplementationsJFRTest {
 
 			Tracer tracer = JFRTracer.wrap(testTracer);
 
-			// Start JFR
-			Recording recording = new Recording();
-			recording.enable(JFRSpan.class);
-			recording.start();
+			try (Recording recording = new Recording()) {
+				recording.enable(JFRSpan.class);
+				recording.start();
 
-			// Generate span
-			Span start = tracer.buildSpan("outer span").start();
-			tracer.scopeManager().activate(start, false);
-			tracer.buildSpan("inner span").startActive(true).close();
-			tracer.scopeManager().active().close();
-			start.finish();
+				// Generate span
+				Span start = tracer.buildSpan("outer span").start();
+				tracer.scopeManager().activate(start, false);
+				tracer.buildSpan("inner span").startActive(true).close();
+				tracer.scopeManager().active().close();
+				start.finish();
 
-			// Stop recording
-			recording.stop();
-			recording.dump(output);
+				recording.dump(output);
+			}
 
 			// Validate span was created and recorded in JFR
 			List<RecordedEvent> events = RecordingFile.readAllEvents(output);

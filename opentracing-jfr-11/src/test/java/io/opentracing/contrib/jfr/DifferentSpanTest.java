@@ -36,22 +36,20 @@ public class DifferentSpanTest {
 			MockTracer mockTracer = new MockTracer();
 			Tracer tracer = JFRTracer.wrap(mockTracer);
 
-			// Start JFR
-			Recording recording = new Recording();
-			recording.enable(JFRSpan.class);
-			recording.start();
+			try (Recording recording = new Recording()) {
+				recording.enable(JFRSpan.class);
+				recording.start();
 
-			// Generate spans
-			Span span = tracer.buildSpan("test span").start();
-			TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
-			executor.submit(() -> {
-				tracer.buildSpan("executor span").start().finish();
-			}).get(5, TimeUnit.SECONDS);
-			span.finish();
+				// Generate spans
+				Span span = tracer.buildSpan("test span").start();
+				TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
+				executor.submit(() -> {
+					tracer.buildSpan("executor span").start().finish();
+				}).get(5, TimeUnit.SECONDS);
+				span.finish();
 
-			// Stop recording
-			recording.stop();
-			recording.dump(output);
+				recording.dump(output);
+			}
 
 			// Validate span was created and recorded in JFR
 			assertEquals(2, mockTracer.finishedSpans().size());
@@ -81,21 +79,19 @@ public class DifferentSpanTest {
 			MockTracer mockTracer = new MockTracer();
 			Tracer tracer = JFRTracer.wrap(mockTracer);
 
-			// Start JFR
-			Recording recording = new Recording();
-			recording.enable(JFRSpan.class);
-			recording.start();
+			try (Recording recording = new Recording()) {
+				recording.enable(JFRSpan.class);
+				recording.start();
 
-			// Generate spans
-			Span span = tracer.buildSpan("test span").start();
-			TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
-			executor.submit(() -> {
-				span.finish();
-			}).get(5, TimeUnit.SECONDS);
+				// Generate spans
+				Span span = tracer.buildSpan("test span").start();
+				TracedExecutorService executor = new TracedExecutorService(Executors.newSingleThreadExecutor(), tracer);
+				executor.submit(() -> {
+					span.finish();
+				}).get(5, TimeUnit.SECONDS);
 
-			// Stop recording
-			recording.stop();
-			recording.dump(output);
+				recording.dump(output);
+			}
 
 			// Validate span was created and recorded in JFR
 			assertEquals(1, mockTracer.finishedSpans().size());

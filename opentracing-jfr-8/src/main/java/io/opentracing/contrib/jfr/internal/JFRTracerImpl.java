@@ -1,27 +1,18 @@
 package io.opentracing.contrib.jfr.internal;
 
-import com.oracle.jrockit.jfr.FlightRecorder;
-import com.oracle.jrockit.jfr.Producer;
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import static io.opentracing.contrib.jfr.internal.JFRFactory.startJFRSpan;
+import static io.opentracing.contrib.jfr.internal.JFRSpan.createJFRSpan;
 
 public class JFRTracerImpl implements Tracer {
 
-	private static final Logger LOG = LoggerFactory.getLogger(JFRTracerImpl.class);
-
-	private static volatile Producer producer;
-
 	private final Tracer tracer;
 	private final JFRScopeManager scopeManager;
-	private FlightRecorder jfr;
 
 	public JFRTracerImpl(Tracer tracer) {
 		this.tracer = tracer;
@@ -113,13 +104,13 @@ public class JFRTracerImpl implements Tracer {
 		@Deprecated
 		public Span startManual() {
 			Span span = spanBuilder.startManual();
-			return startJFRSpan(tracer, span, operationName);
+			return createJFRSpan(tracer, span, operationName);
 		}
 
 		@Override
 		public Span start() {
 			Span span = spanBuilder.start();
-			return startJFRSpan(tracer, span, operationName);
+			return createJFRSpan(tracer, span, operationName);
 		}
 	}
 }

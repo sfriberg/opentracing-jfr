@@ -8,6 +8,7 @@ import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
 import jdk.jfr.Category;
 import jdk.jfr.Description;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.Label;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +18,16 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static java.util.Objects.isNull;
+
 @Category("OpenTracing")
 @Label("OpenTracing JFR Event")
 @Description("Open Tracing spans exposed as a JFR event")
 public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 
-	private final static Logger LOG = LoggerFactory.getLogger(JFRTracer.class);
-	private final Tracer tracer;
+	private final static Logger LOG = LoggerFactory.getLogger(JFRSpan.class);
+	private static FlightRecorder jfr;
+
 	private final Span span;
 
 	@Label("Trace ID")
@@ -50,13 +54,9 @@ public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 	@Description("Thread finishing the span")
 	private Thread finishThread;
 
-	/**
-	 * Create a new Span Event
-	 */
-	public JFRSpan(Tracer tracer, Span span, String name) {
+	private JFRSpan(Span span, String name) {
 		this.name = name;
 		this.startThread = Thread.currentThread();
-		this.tracer = tracer;
 		this.span = span;
 	}
 
@@ -196,10 +196,27 @@ public class JFRSpan extends jdk.jfr.Event implements Span, TextMap {
 
 	void finishJFR() {
 		if (shouldCommit()) {
-			tracer.inject(span.context(), Format.Builtin.TEXT_MAP, this);
 			this.finishThread = Thread.currentThread();
 			end();
 			commit();
 		}
+	}
+
+	static Span createJFRSpan(Tracer tracer, Span span, String operationName) {
+		if (FlightRecorder.isAvailable() && FlightRecorder.isInitialized()) {
+
+			// Avoid synchronization
+			if (isNull(jfr)) {
+				jfr = FlightRecorder.getFlightRecorder();
+			}
+
+			if (!jfr.getRecordings().isEmpty()) {
+				JFRSpan jfrSpan = new JFRSpan(span, operationName);
+				tracer.inject(span.context(), Format.Builtin.TEXT_MAP, jfrSpan);
+				jfrSpan.begin();
+				return jfrSpan;
+			}
+		}
+		return span;
 	}
 }

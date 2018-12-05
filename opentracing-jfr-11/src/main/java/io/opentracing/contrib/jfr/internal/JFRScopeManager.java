@@ -7,7 +7,7 @@ import io.opentracing.Tracer;
 
 public class JFRScopeManager implements ScopeManager {
 
-	final ThreadLocal<JFRScope> activeScope = new ThreadLocal<>();
+	final ThreadLocal<Scope> activeScope = new ThreadLocal<>();
 	private final Tracer tracer;
 
 	JFRScopeManager(Tracer tracer) {
@@ -16,13 +16,13 @@ public class JFRScopeManager implements ScopeManager {
 
 	@Override
 	public Scope activate(Span span, boolean finishSpanOnClose) {
-		JFRScope scope;
+		Scope scope;
 		if (span instanceof JFRSpan) {
-			scope = new JFRScope(tracer, this, tracer.scopeManager().activate(((JFRSpan) span).unwrap(), finishSpanOnClose), (JFRSpan) span, finishSpanOnClose);
+			JFRScope jfrScope = new JFRScope(this, tracer.scopeManager().activate(((JFRSpan) span).unwrap(), finishSpanOnClose), (JFRSpan) span, finishSpanOnClose);
+			jfrScope.begin();
+			scope = jfrScope;
 		} else {
-			JFRSpan jfrSpan = new JFRSpan(tracer, span, "unknown");
-			jfrSpan.begin();
-			scope = new JFRScope(tracer, this, tracer.scopeManager().activate(span, finishSpanOnClose), jfrSpan, finishSpanOnClose);
+			scope = new BasicScope(this, tracer.scopeManager().activate(span, finishSpanOnClose));
 		}
 		activeScope.set(scope);
 		return scope;
@@ -33,4 +33,7 @@ public class JFRScopeManager implements ScopeManager {
 		return activeScope.get();
 	}
 
+	void setActive(Scope scope) {
+		activeScope.set(scope);
+	}
 }

@@ -2,6 +2,10 @@ package io.opentracing.contrib.jfr.internal;
 
 import com.oracle.jrockit.jfr.ContentType;
 import com.oracle.jrockit.jfr.EventDefinition;
+import com.oracle.jrockit.jfr.FlightRecorder;
+import com.oracle.jrockit.jfr.InvalidEventDefinitionException;
+import com.oracle.jrockit.jfr.InvalidValueException;
+import com.oracle.jrockit.jfr.Producer;
 import com.oracle.jrockit.jfr.TimedEvent;
 import com.oracle.jrockit.jfr.ValueDefinition;
 import io.opentracing.Span;
@@ -12,12 +16,17 @@ import io.opentracing.propagation.TextMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import static io.opentracing.contrib.jfr.internal.JFRFactory.EXECUTOR;
+import static java.util.Objects.isNull;
 
 @SuppressWarnings("deprecation")
 @EventDefinition(path = "OpenTracing/Span", name = "Open Tracing Span", description = "Open Tracing spans exposed as a JFR event", stacktrace = true, thread = true)
@@ -25,7 +34,17 @@ public class JFRSpan extends TimedEvent implements Span, TextMap {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JFRSpan.class);
 
-	private final Tracer tracer;
+	private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.DAYS,
+			new ArrayBlockingQueue<>(50), r -> {
+				Thread thread = new Thread(r, "JFRTracer Span Events");
+				thread.setDaemon(true);
+				return thread;
+			},
+			(r, e) -> {
+				LOG.warn("Dropped JFR OpenTracing Span");
+			});
+	private static volatile Producer producer;
+
 	private final Span span;
 
 	@ValueDefinition(name = "Trace ID", description = "Trace ID that will be the same for all spans that are part of the same trace", contentType = ContentType.None)
@@ -46,13 +65,9 @@ public class JFRSpan extends TimedEvent implements Span, TextMap {
 	@ValueDefinition(name = "Finish Thread", description = "Thread finishing the span")
 	private Thread finishThread;
 
-	/**
-	 * Create a new Span Event
-	 */
-	JFRSpan(Tracer tracer, Span span, String name) {
+	private JFRSpan(Span span, String name) {
 		this.name = name;
 		this.startThread = Thread.currentThread();
-		this.tracer = tracer;
 		this.span = span;
 	}
 
@@ -193,11 +208,45 @@ public class JFRSpan extends TimedEvent implements Span, TextMap {
 	void finishJFR() {
 		this.finishThread = Thread.currentThread();
 		EXECUTOR.execute(() -> {
-			if (shouldWrite()) {
-				tracer.inject(span.context(), Format.Builtin.TEXT_MAP, this);
+			if (this.shouldWrite()) {
 				this.end();
 				this.commit();
 			}
 		});
+	}
+
+	private static boolean init() {
+		if (FlightRecorder.isActive()) {
+			if (isNull(producer)) {
+				synchronized (JFRTracerImpl.class) {
+					if (isNull(producer)) {
+						try {
+							Producer p = new Producer("OpenTracing", "OpenTracing JFR Events", "http://opentracing.io/");
+							p.addEvent(JFRSpan.class);
+							p.addEvent(JFRScope.class);
+							p.register();
+							producer = p;
+						} catch (URISyntaxException | InvalidValueException | InvalidEventDefinitionException ex) {
+							LOG.error("Unable to register JFR producer.", ex);
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	static Span createJFRSpan(Tracer tracer, Span span, String operationName) {
+		if (init()) {
+			JFRSpan jfrSpan = new JFRSpan(span, operationName);
+			tracer.inject(jfrSpan.context(), Format.Builtin.TEXT_MAP, jfrSpan);
+			EXECUTOR.execute(jfrSpan::begin);
+			return jfrSpan;
+		} else {
+			return span;
+		}
 	}
 }

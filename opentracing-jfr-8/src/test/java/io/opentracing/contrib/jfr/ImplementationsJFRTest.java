@@ -30,6 +30,7 @@ import static io.opentracing.contrib.jfr.JFRTestUtils.stopJfr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@SuppressWarnings("deprecation")
 public class ImplementationsJFRTest {
 
 	@Test
